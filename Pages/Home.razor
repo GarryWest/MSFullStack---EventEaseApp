@@ -1,0 +1,85 @@
+﻿@page "/"
+@inject EventEaseApp.Services.EventService EventService
+@using EventEaseApp.Models
+@inject NavigationManager NavigationManager
+
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
+<PageTitle>Event Ease App</PageTitle>
+
+<div class="container mt-5">
+    <h3>Create a New Event</h3>
+
+    <EditForm Model="@newEvent" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="text-danger" />
+
+        <div class="form-group">
+            <label for="eventName">Event Name:</label>
+            <InputText id="eventName" class="form-control" @bind-Value="newEvent.Name" />
+        </div>
+        <div class="form-group">
+            <label for="eventDate">Event Date:</label>
+            <InputDate id="eventDate" class="form-control" @bind-Value="newEvent.Date" />
+        </div>
+        <div class="form-group">
+            <label for="eventLocation">Event Location:</label>
+            <InputText id="eventLocation" class="form-control" @bind-Value="newEvent.Location" />
+        </div>
+        <button type="submit" class="btn btn-primary">Create Event</button>
+    </EditForm>
+
+    <h3 class="mt-5">Existing Events</h3>
+
+    @if (events == null)
+    {
+        <p>Loading...</p>
+    }
+    else if (!events.Any())
+    {
+        <p>No events available.</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var eventItem in events)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <EventCard EventID="@eventItem.Id" />
+                    <button class="btn btn-secondary btn-sm" @onclick="() => NavigateToRegister(eventItem.Id)">Register</button>
+                    <button class="btn btn-danger btn-sm" @onclick="() => RemoveEvent(eventItem.Id)">Remove</button>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    private List<Event> events;
+
+    protected override async Task OnInitializedAsync()
+    {
+        events = await EventService.GetEventsAsync();
+    }
+}
+
+@code {
+    private Event newEvent = new Event();
+
+    private void HandleValidSubmit()
+    {
+        // Logic to handle the form submission
+        EventService.CreateEventAsync(newEvent);
+        newEvent = new Event();
+    }
+
+    private async void RemoveEvent(int eventId)
+    {
+        bool result = await EventService.RemoveEventAsync(eventId);
+    }
+
+    private void NavigateToRegister(int eventId)
+    {
+        NavigationManager.NavigateTo($"/register/{eventId}");
+    }
+}
+ 

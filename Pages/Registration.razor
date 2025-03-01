@@ -1,0 +1,45 @@
+@page "/register/{EventId:int}"
+@using EventEaseApp.Models
+@inject HttpClient Http
+@inject Services.EventService EventService
+@inject NavigationManager NavigationManager
+
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" />
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <h3 class="text-center">Register for Event</h3>
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input id="name" class="form-control" @bind="newRegistration.Name" />
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input id="email" class="form-control" @bind="newRegistration.Email" />
+            </div>
+            <div class="form-group">
+                <label for="phoneNumber">Phone Number:</label>
+                <input id="phoneNumber" class="form-control" @bind="newRegistration.PhoneNumber" />
+            </div>
+            <button class="btn btn-primary btn-block" @onclick="Register">Register</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int EventId { get; set; }
+
+    private EventRegistration newRegistration = new EventRegistration();
+
+    private async Task Register()
+    {
+        newRegistration.EventId = EventId;
+        EventService.RegisterForEventAsync(newRegistration);
+
+        NavigationManager.NavigateTo("/");
+    }
+        
+}
+

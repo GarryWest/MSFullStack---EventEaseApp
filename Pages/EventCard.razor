@@ -1,0 +1,40 @@
+@page "/eventcard/{EventID:int}"
+@inject EventEaseApp.Services.EventService EventService
+@using EventEaseApp.Models
+
+@code {
+    [Parameter]
+    public int EventID { get; set; }
+
+    private Event eventModel;
+
+    protected override async Task OnInitializedAsync()
+    {
+        eventModel = await EventService.GetEventByIdAsync(EventID);
+    }
+
+    private async void SaveEvent()
+    {
+        EventService.UpdateEventAsync(eventModel);
+    }
+}
+
+@if (eventModel == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div>
+        <label>Event Name:</label>
+        <input @bind="eventModel.Name" />
+
+        <label>Event Date:</label>
+        <input type="date" @bind="eventModel.Date" />
+
+        <label>Event Location:</label>
+        <textarea @bind="eventModel.Location"></textarea>
+
+        <button @onclick="SaveEvent">Save</button>
+    </div>
+}
