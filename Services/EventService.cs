@@ -1,44 +1,76 @@
+using Blazored.LocalStorage;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using EventEaseApp.Models;
 
 namespace EventEaseApp.Services
 {
     public class EventService
     {
-        private readonly List<Event> _events;
-        private readonly List<EventRegistration> _eventRegistrations;
+        private List<Event> _events;
 
-        public EventService()
+        private ILocalStorageService _localStorage;
+        private const string EventRegistrationsKey = "EventRegistrations";
+        private const string EventKey = "Events";
+
+
+        public EventService(ILocalStorageService localStorage)
         {
-            _events = new List<Event>();
+            _localStorage = localStorage;
         }
+
+        private async Task LoadEventsAsync()
+        {
+            _events = await _localStorage.GetItemAsync<List<Event>>(EventKey) ?? new List<Event>();
+        }
+
+        private async Task InitializeAsync()
+        {
+            await LoadEventsAsync();
+        }
+
+
+
+        // public async Task<EventService> InitializeAsync(ILocalStorageService localStorage)
+        // {
+        //     _localStorage = localStorage;
+        //     _events = await _localStorage.GetItemAsync<List<Event>>(EventKey) ?? new List<Event>();
+        //     return this;
+        // }
 
         public async Task<List<Event>> GetEventsAsync()
         {
-            return await Task.FromResult(_events);
+            _events = await _localStorage.GetItemAsync<List<Event>>(EventKey) ?? new List<Event>();
+            return _events;
         }
 
         public async Task<Event> GetEventByIdAsync(int eventId)
         {
-            return await Task.FromResult(_events.Find(e => e.Id == eventId));
+            return _events.Find(e => e.Id == eventId) ?? new Event();
         }
 
-        public async void CreateEventAsync(Event newEvent)
+        public async Task CreateEventAsync(Event newEvent)
         {
+            Console.WriteLine($"EventService.CreateEventAsync: {newEvent}");
             if (newEvent == null)
             {
                 throw new ArgumentNullException(nameof(newEvent));
             }
+            await LoadEventsAsync();
+            newEvent.Id = _events.Count + 1;
             _events.Add(newEvent);
+            await _localStorage.SetItemAsync(EventKey, _events);
         }
 
-        public async void UpdateEventAsync(Event updatedEvent)
+        public async Task UpdateEventAsync(Event updatedEvent)
         {
             if (updatedEvent == null)
             {
                 throw new ArgumentNullException(nameof(updatedEvent));
             }
+
             var eventToUpdate = _events.Find(e => e.Id == updatedEvent.Id);
             if (eventToUpdate != null)
             {
@@ -46,17 +78,10 @@ namespace EventEaseApp.Services
                 eventToUpdate.Date = updatedEvent.Date;
                 eventToUpdate.Location = updatedEvent.Location;
             }
-        }
+            await _localStorage.SetItemAsync(EventKey, _events);
 
-        public async void RegisterForEventAsync(EventRegistration newRegistration)
-        {
-            if (newRegistration == null)
-            {
-                throw new ArgumentNullException(nameof(newRegistration));
-            }
-            _eventRegistrations.Add(newRegistration);
+            //return Task.CompletedTask;
         }
-
 
         public async Task<bool> RemoveEventAsync(int eventId)
         {
@@ -64,6 +89,7 @@ namespace EventEaseApp.Services
             if (eventToRemove != null)
             {
                 _events.Remove(eventToRemove);
+                await _localStorage.SetItemAsync(EventKey, _events);
                 return true;
             }
             return false;

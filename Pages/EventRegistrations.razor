@@ -1,0 +1,51 @@
+@page "/eventregistrations"
+@using EventEaseApp.Models
+@inject HttpClient Http
+@inject EventRegistrationService EventRegistrationService
+
+<h3>Event Registrations</h3>
+
+@if (eventRegistrations == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Event Name</th>
+                <th>Description</th>
+                <th>Registrant Name</th>
+                <th>Registrant Email</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var registration in eventRegistrations)
+            {
+                <tr>
+                    <td>@registration.Event.Name</td>
+                    <td>@registration.Event.Location</td>
+                    <td>@registration.Name</td>
+                    <td>@registration.Email</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<EventRegistration> eventRegistrations = new List<EventRegistration>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEventsAsync();
+    }
+
+    private async Task LoadEventsAsync()
+    {
+        eventRegistrations = await EventRegistrationService.GetEventRegistrationsAsync();
+    }
+    
+    
+}

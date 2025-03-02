@@ -1,21 +1,31 @@
 @page "/eventcard/{EventID:int}"
 @inject EventEaseApp.Services.EventService EventService
 @using EventEaseApp.Models
+@using Microsoft.AspNetCore.Components.Forms
 
 @code {
     [Parameter]
     public int EventID { get; set; }
 
     private Event eventModel;
+    private EditContext editContext;
+    private bool isValid = true;
+    private string successMessage;
 
     protected override async Task OnInitializedAsync()
     {
         eventModel = await EventService.GetEventByIdAsync(EventID);
+        editContext = new EditContext(eventModel);
     }
 
     private async void SaveEvent()
     {
-        EventService.UpdateEventAsync(eventModel);
+        isValid = editContext.Validate();
+        if (isValid)
+        {
+            await EventService.UpdateEventAsync(eventModel);
+            successMessage = "Event saved successfully!";
+        }
     }
 }
 
@@ -25,16 +35,25 @@
 }
 else
 {
-    <div>
-        <label>Event Name:</label>
-        <input @bind="eventModel.Name" />
+    <EditForm EditContext="editContext" OnValidSubmit="SaveEvent">
+        @if (!string.IsNullOrEmpty(successMessage))
+        {
+            <div class="alert alert-success">@successMessage</div>
+        }
+        <div>
+            <label>Event Name:</label>
+            <InputText @bind-Value="eventModel.Name" />
+            <ValidationMessage For="@(() => eventModel.Name)" />
 
-        <label>Event Date:</label>
-        <input type="date" @bind="eventModel.Date" />
+            <label>Event Date:</label>
+            <InputDate @bind-Value="eventModel.Date" />
+            <ValidationMessage For="@(() => eventModel.Date)" />
 
-        <label>Event Location:</label>
-        <textarea @bind="eventModel.Location"></textarea>
+            <label>Event Location:</label>
+            <InputTextArea @bind-Value="eventModel.Location" />
+            <ValidationMessage For="@(() => eventModel.Location)" />
 
-        <button @onclick="SaveEvent">Save</button>
-    </div>
+            <button type="submit">Save</button>
+        </div>
+    </EditForm>
 }

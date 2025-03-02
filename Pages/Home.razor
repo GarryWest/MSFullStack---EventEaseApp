@@ -1,15 +1,31 @@
 ﻿@page "/"
-@inject EventEaseApp.Services.EventService EventService
 @using EventEaseApp.Models
+@using Microsoft.AspNetCore.Components.Forms
+@inject EventEaseApp.Services.EventService EventService
 @inject NavigationManager NavigationManager
 
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
 <PageTitle>Event Ease App</PageTitle>
-
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="/">Event Ease App</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="/">Home</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/eventregistrations">Event Registrations</a>
+            </li>
+        </ul>
+    </div>
+</nav>
 <div class="container mt-5">
     <h3>Create a New Event</h3>
 
-    <EditForm Model="@newEvent" OnValidSubmit="HandleValidSubmit">
+    <EditForm Model="@newEvent" OnValidSubmit="HandleValidSubmitAsync">
         <DataAnnotationsValidator />
         <ValidationSummary class="text-danger" />
 
@@ -19,7 +35,7 @@
         </div>
         <div class="form-group">
             <label for="eventDate">Event Date:</label>
-            <InputDate id="eventDate" class="form-control" @bind-Value="newEvent.Date" />
+            <InputDate id="eventDate" class="form-control" @bind-Value="newEvent.Date" style="max-width: 300px;" />
         </div>
         <div class="form-group">
             <label for="eventLocation">Event Location:</label>
@@ -46,7 +62,7 @@
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <EventCard EventID="@eventItem.Id" />
                     <button class="btn btn-secondary btn-sm" @onclick="() => NavigateToRegister(eventItem.Id)">Register</button>
-                    <button class="btn btn-danger btn-sm" @onclick="() => RemoveEvent(eventItem.Id)">Remove</button>
+                    <button class="btn btn-danger btn-sm" @onclick="() => RemoveEventAsync(eventItem.Id)">Remove</button>
                 </li>
             }
         </ul>
@@ -54,27 +70,46 @@
 </div>
 
 @code {
-    private List<Event> events;
+    public Event newEvent = new Event();
+    public List<Event> events;
+
+    private string successMessage;
+    private string errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadEventsAsync();
+    }
+
+    private async Task LoadEventsAsync()
+    {
         events = await EventService.GetEventsAsync();
     }
-}
 
-@code {
-    private Event newEvent = new Event();
-
-    private void HandleValidSubmit()
+    private async Task HandleValidSubmitAsync()
     {
-        // Logic to handle the form submission
-        EventService.CreateEventAsync(newEvent);
-        newEvent = new Event();
+        try
+        {
+            await EventService.CreateEventAsync(newEvent);
+            successMessage = "Event created successfully!";
+            errorMessage = null;
+            newEvent = new Event(); // Reset the form
+            await LoadEventsAsync(); // Reload the events
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error creating event: {ex.Message}";
+            successMessage = null;
+        }
     }
 
-    private async void RemoveEvent(int eventId)
+    private async Task RemoveEventAsync(int eventId)
     {
         bool result = await EventService.RemoveEventAsync(eventId);
+        if (result)
+        {
+            await LoadEventsAsync(); // Reload the events
+        }
     }
 
     private void NavigateToRegister(int eventId)
@@ -82,4 +117,3 @@
         NavigationManager.NavigateTo($"/register/{eventId}");
     }
 }
- 
